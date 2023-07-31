@@ -9,16 +9,17 @@ public class MyBot : IChessBot
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
 
 
-    public int eval(IEnumerable<PieceList> pieces)
+    public int eval(IEnumerable<PieceList> my_pieces, IEnumerable<PieceList> enemy_pieces)
     {
-        var t = pieces.Select(c => c.Count);
-        return pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();   
+        var my_value = my_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();
+        var enemy_value = enemy_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();
+        return my_value - enemy_value;   
     }
 
     public int eval_after_move(Board board, Move move)
     {
         board.MakeMove(move);
-        int evaluation = eval(board.GetAllPieceLists().Where(c => c.IsWhitePieceList == board.IsWhiteToMove));
+        int evaluation = eval(board.GetAllPieceLists().Where(c => c.IsWhitePieceList == board.IsWhiteToMove), board.GetAllPieceLists().Where(c => c.IsWhitePieceList != board.IsWhiteToMove));
 
         board.UndoMove(move);
 
@@ -32,7 +33,9 @@ public class MyBot : IChessBot
 
         // Pick a random move to play if nothing better is found
         Random rng = new();
+
         Move moveToPlay = allMoves[rng.Next(allMoves.Length)];
+
         int highestValueCapture = 0;
 
         foreach (Move move in allMoves)
@@ -45,18 +48,24 @@ public class MyBot : IChessBot
 
             if (isBot)
             {
-                var initial_eval = eval(board.GetAllPieceLists().Where(c => c.IsWhitePieceList == board.IsWhiteToMove));    
+                var initial_eval = eval(board.GetAllPieceLists().Where(c => c.IsWhitePieceList == board.IsWhiteToMove), board.GetAllPieceLists().Where(c => c.IsWhitePieceList != board.IsWhiteToMove));    
+                
                 // try move 
                 board.MakeMove(move);
 
-                // See what move enemy wants to make
-                Move enemy_move = ThinkGen(board, timer, false);
+                int updated_eval = 0;
 
-                int updated_eval = eval_after_move(board, enemy_move);
-                board.UndoMove(move);
+                if (!board.IsInStalemate())
+                {
+                    // See what move enemy wants to make
+                    Move enemy_move = ThinkGen(board, timer, false);
+                    updated_eval = eval_after_move(board, enemy_move);
+                }
 
                 candidateMoves.Add(new(move, updated_eval));
-            } 
+                board.UndoMove(move);
+            }
+
             else
             {
                 // Find highest value capture
