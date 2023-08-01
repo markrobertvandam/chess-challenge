@@ -9,16 +9,16 @@ namespace ChessChallenge.Application
     {
         public static void DrawButtons(ChallengeController controller)
         {
-            Vector2 buttonPos = UIHelper.Scale(new Vector2(260, 210));
+            Vector2 buttonPos = UIHelper.Scale(new Vector2(150, 210));
             Vector2 buttonSize = UIHelper.Scale(new Vector2(260, 55));
             float spacing = buttonSize.Y * 1.2f;
             float breakSpacing = spacing * 0.6f;
 
             // Game Buttons
-            if (NextButtonInRow("Human vs MyBot", ref buttonPos, spacing, buttonSize))
+            if (NextButtonInRow("Human vs MyBotv3", ref buttonPos, spacing, buttonSize))
             {
-                var whiteType = controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBot : ChallengeController.PlayerType.Human;
-                var blackType = !controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBot : ChallengeController.PlayerType.Human;
+                var whiteType = controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBotv3 : ChallengeController.PlayerType.Human;
+                var blackType = !controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBotv3 : ChallengeController.PlayerType.Human;
                 controller.StartNewGame(whiteType, blackType);
             }
             if (NextButtonInRow("MyBot vs MyBot", ref buttonPos, spacing, buttonSize))
@@ -75,6 +75,29 @@ namespace ChessChallenge.Application
                 bool pressed = UIHelper.Button(name, pos, size);
                 pos.Y += spacingY;
                 return pressed;
+            }
+
+
+            buttonPos = UIHelper.Scale(new Vector2(405, 210)); 
+            buttonSize = UIHelper.Scale(new Vector2(200, 55));
+            if (NextButtonInRow("MyBot vs MyBotv1", ref buttonPos, spacing, buttonSize))
+            { 
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv1);
+            }
+
+            if (NextButtonInRow("MyBot vs MyBotv2", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv2);
+            }
+
+            if (NextButtonInRow("MyBot vs MyBotv3", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv3);
+            }
+
+            if (NextButtonInRow("MyBot vs Tier1", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.Tier1);
             }
         }
     }

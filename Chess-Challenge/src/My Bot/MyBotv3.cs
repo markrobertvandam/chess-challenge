@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
-{   // currently the same as v3
+public class MyBotv3 : IChessBot
+{
 
     //                     .  P    K    B    R    Q    K
     int[] pieceValues = { 0, 100, 300, 310, 500, 900, 10000 };
@@ -24,16 +24,6 @@ public class MyBot : IChessBot
         { 58006849062751744, 63647386663573504, 63625396431020544, 63614422789579264 }
     };
 
-    // MVV_VLA[victim][attacker]
-    public readonly int[,] MVV_VLA = {
-        {0, 0, 0, 0, 0, 0, 0},       // victim None, attacker P, K, B, R, Q, K
-        {0, 15, 14, 13, 12, 11, 10}, // victim None, P, attacker P, K, B, R, Q, K
-        {0, 25, 24, 23, 22, 21, 20}, // victim None, N, attacker P, K, B, R, Q, K
-        {0, 35, 34, 33, 32, 31, 30}, // victim None, B, attacker P, K, B, R, Q, K
-        {0, 40, 41, 42, 43, 44, 45}, // victim None, R, attacker P, K, B, R, Q, K
-        {0, 55, 54, 53, 52, 51, 50}, // victim None, Q, attacker P, K, B, R, Q, K
-    };
-
     private int GetPieceSquareBonus(PieceType type, bool isWhite, int file, int rank)
     {
         if (file > 3)
@@ -44,37 +34,41 @@ public class MyBot : IChessBot
         return isWhite ? unpackedData : -unpackedData;
     }
 
-    public int eval(Board board, IEnumerable<PieceList> white_pieces, IEnumerable<PieceList> black_pieces)
+    public int eval(Board board, IEnumerable<PieceList> my_pieces, IEnumerable<PieceList> enemy_pieces)
     {
-        var my_value = white_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();
-        var enemy_value = black_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();
+        var my_value = my_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();
+        var enemy_value = enemy_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();
 
         var relevantPieceTypes = new List<PieceType> { PieceType.Knight, PieceType.Rook, PieceType.Bishop, PieceType.Queen };
         int activityDiff = 0;
 
         int whiteBonus = 0;
+        foreach (PieceList pieceList in board.GetAllPieceLists())
+        {
+            foreach (Piece piece in pieceList)
+            {
+                int val = GetPieceSquareBonus(piece.PieceType, piece.IsWhite, piece.Square.File, piece.Square.Rank);
+                whiteBonus += board.IsWhiteToMove ? val : -val;
+            }
+        }
 
         foreach (PieceType pieceType in relevantPieceTypes)
         {
-            var whitePieceLists = white_pieces.Where(c => c.TypeOfPieceInList == pieceType);
-            var blackPieceLists = black_pieces.Where(c => c.TypeOfPieceInList == pieceType);
+            var myPieces = my_pieces.Where(c => c.TypeOfPieceInList == pieceType);
+            var enemyPieces = enemy_pieces.Where(c => c.TypeOfPieceInList == pieceType);
 
-            foreach (PieceList? whitePieceList in whitePieceLists)
+            foreach (PieceList? pieceList in myPieces)
             {
-                foreach (Piece whitePiece in whitePieceList)
+                foreach (Piece piece in pieceList)
                 {
-                    int val = GetPieceSquareBonus(whitePiece.PieceType, whitePiece.IsWhite, whitePiece.Square.File, whitePiece.Square.Rank);
-                    whiteBonus += val;
-                    activityDiff += BitboardHelper.GetNumberOfSetBits(BitboardHelper.GetPieceAttacks(pieceType, whitePiece.Square, board, board.IsWhiteToMove)) * 5;
+                    activityDiff += BitboardHelper.GetNumberOfSetBits(BitboardHelper.GetPieceAttacks(pieceType, piece.Square, board, board.IsWhiteToMove)) * 10;
                 }
             }
-            foreach (PieceList? blackPieceList in blackPieceLists)
+            foreach (PieceList? pieceList in enemyPieces)
             {
-                foreach (Piece blackPiece in blackPieceList)
+                foreach (Piece piece in pieceList)
                 {
-                    int val = GetPieceSquareBonus(blackPiece.PieceType, blackPiece.IsWhite, blackPiece.Square.File, blackPiece.Square.Rank);
-                    whiteBonus -= val;
-                    activityDiff -= BitboardHelper.GetNumberOfSetBits(BitboardHelper.GetPieceAttacks(pieceType, blackPiece.Square, board, board.IsWhiteToMove)) * 5;
+                    activityDiff -= BitboardHelper.GetNumberOfSetBits(BitboardHelper.GetPieceAttacks(pieceType, piece.Square, board, board.IsWhiteToMove)) * 10;
                 }
             }
         }
@@ -83,32 +77,21 @@ public class MyBot : IChessBot
         return my_value - enemy_value + activityDiff + whiteBonus;
     }
 
-    public List<Move> orderLegalMoves(Move[] legalMoves)
-    {
-        List<Move> sortedMoves = legalMoves
-            .Select(c => new Tuple<Move, int> (c, MVV_VLA[(int)c.CapturePieceType, (int)c.MovePieceType]))
-            .OrderByDescending(t => t.Item2)
-            .Select(c => c.Item1)
-            .ToList();
-
-        return sortedMoves;
-    }
-
     public Move Think(Board board, Timer timer)
     {
-        mDepth = 5;
+        mDepth = 3;
         EvaluateBoardNegaMax(board, mDepth, -kMassiveNum, kMassiveNum, board.IsWhiteToMove ? 1 : -1);
         return mBestMove;
     }
 
     int EvaluateBoardNegaMax(Board board, int depth, int alpha, int beta, int color)
     {
-        List<Move> legalMoves;
+        Move[] legalMoves;
 
         if (board.IsDraw())
             return 0;
 
-        if (depth == 0 || (legalMoves = orderLegalMoves(board.GetLegalMoves())).Count == 0)
+        if (depth == 0 || (legalMoves = board.GetLegalMoves()).Length == 0)
         {
             if (board.IsInCheckmate())
                 return -999999 + mDepth - depth;
