@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
-{   // currently the same as v4
+public class MyBotv4 : IChessBot
+{  
 
     //                     .  P    K    B    R    Q    K
     int[] pieceValues = { 0, 100, 300, 310, 500, 900, 10000 };
@@ -86,7 +86,7 @@ public class MyBot : IChessBot
     public List<Move> orderLegalMoves(Move[] legalMoves)
     {
         List<Move> sortedMoves = legalMoves
-            .Select(c => new Tuple<Move, int> (c, MVV_VLA[(int)c.CapturePieceType, (int)c.MovePieceType]))
+            .Select(c => new Tuple<Move, int>(c, MVV_VLA[(int)c.CapturePieceType, (int)c.MovePieceType]))
             .OrderByDescending(t => t.Item2)
             .Select(c => c.Item1)
             .ToList();

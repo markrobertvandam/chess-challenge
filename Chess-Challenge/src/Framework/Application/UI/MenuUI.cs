@@ -15,10 +15,10 @@ namespace ChessChallenge.Application
             float breakSpacing = spacing * 0.6f;
 
             // Game Buttons
-            if (NextButtonInRow("Human vs MyBotv3", ref buttonPos, spacing, buttonSize))
+            if (NextButtonInRow("Human vs MyBot", ref buttonPos, spacing, buttonSize))
             {
-                var whiteType = controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBotv3 : ChallengeController.PlayerType.Human;
-                var blackType = !controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBotv3 : ChallengeController.PlayerType.Human;
+                var whiteType = controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBot : ChallengeController.PlayerType.Human;
+                var blackType = !controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBot : ChallengeController.PlayerType.Human;
                 controller.StartNewGame(whiteType, blackType);
             }
             if (NextButtonInRow("MyBot vs MyBot", ref buttonPos, spacing, buttonSize))
@@ -93,6 +93,11 @@ namespace ChessChallenge.Application
             if (NextButtonInRow("MyBot vs MyBotv3", ref buttonPos, spacing, buttonSize))
             {
                 controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv3);
+            }
+
+            if (NextButtonInRow("MyBot vs MyBotv4", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv4);
             }
 
             if (NextButtonInRow("MyBot vs Tier1", ref buttonPos, spacing, buttonSize))

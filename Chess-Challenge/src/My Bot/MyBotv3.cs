@@ -79,7 +79,7 @@ public class MyBotv3 : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        mDepth = 3;
+        mDepth = 4;
         EvaluateBoardNegaMax(board, mDepth, -kMassiveNum, kMassiveNum, board.IsWhiteToMove ? 1 : -1);
         return mBestMove;
     }

@@ -22,6 +22,7 @@ namespace ChessChallenge.Application
             MyBotv1,
             MyBotv2,
             MyBotv3,
+            MyBotv4,
             Tier1,
             EvilBot
         }
@@ -216,6 +217,7 @@ namespace ChessChallenge.Application
                 PlayerType.MyBotv1 => new ChessPlayer(new MyBotv1(), type, GameDurationMilliseconds),
                 PlayerType.MyBotv2 => new ChessPlayer(new MyBotv2(), type, GameDurationMilliseconds),
                 PlayerType.MyBotv3 => new ChessPlayer(new MyBotv3(), type, GameDurationMilliseconds),
+                PlayerType.MyBotv4 => new ChessPlayer(new MyBotv4(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
                 PlayerType.Tier1 => new ChessPlayer(new Tier1(), type, GameDurationMilliseconds),
 
