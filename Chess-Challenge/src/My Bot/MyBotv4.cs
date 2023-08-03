@@ -3,30 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
-{
+public class MyBotv4 : IChessBot
+{  
 
     //                     .  P    K    B    R    Q    K
     int[] pieceValues = { 0, 100, 300, 310, 500, 900, 10000 };
     int kMassiveNum = 99999999;
 
+    int mDepth;
     Move mBestMove;
-    bool searchCancelled;
-
-    struct TTEntry
-    {
-        public ulong key;
-        public Move move;
-        public int depth, bound;
-        public int score;
-        public TTEntry(ulong _key, Move _move, int _depth, int _score, int _bound)
-        {
-            key = _key; move = _move; depth = _depth; score = _score; bound = _bound;
-        }
-    }
-
-    const int entries = (1 << 25);
-    TTEntry[] tt = new TTEntry[entries];
 
     private readonly ulong[,] PackedEvaluationTables = {
         { 58233348458073600, 61037146059233280, 63851895826342400, 66655671952007680 },
@@ -57,24 +42,6 @@ public class MyBot : IChessBot
             rank = 7 - rank;
         sbyte unpackedData = unchecked((sbyte)((PackedEvaluationTables[rank, file] >> 8 * ((int)type - 1)) & 0xFF));
         return isWhite ? unpackedData : -unpackedData;
-    }
-
-    public List<Move> orderLegalMoves(Move[] legalMoves, Move bestMove, Board board)
-    {
-        //Console.WriteLine($"Previous best move: {bestMove}");
-        List<Move> sortedMoves = legalMoves
-            .Select(c => new Tuple<Move, int>(c, MVV_VLA[(int)c.CapturePieceType, (int)c.MovePieceType]))
-            .OrderByDescending(t => t.Item2)
-            .Select(c => c.Item1)
-            .ToList();
-
-
-        if (!bestMove.IsNull)
-        {
-            sortedMoves.Remove(bestMove);
-            sortedMoves.Insert(0, bestMove);
-        }
-        return sortedMoves;
     }
 
     public int eval(Board board, IEnumerable<PieceList> white_pieces, IEnumerable<PieceList> black_pieces)
@@ -116,34 +83,35 @@ public class MyBot : IChessBot
         return my_value - enemy_value + activityDiff + whiteBonus;
     }
 
-    int EvaluateBoardNegaMax(Board board, Timer timer, int depthLeft, int depthSoFar, int alpha, int beta, int color)
+    public List<Move> orderLegalMoves(Move[] legalMoves)
+    {
+        List<Move> sortedMoves = legalMoves
+            .Select(c => new Tuple<Move, int>(c, MVV_VLA[(int)c.CapturePieceType, (int)c.MovePieceType]))
+            .OrderByDescending(t => t.Item2)
+            .Select(c => c.Item1)
+            .ToList();
+
+        return sortedMoves;
+    }
+
+    public Move Think(Board board, Timer timer)
+    {
+        mDepth = 5;
+        EvaluateBoardNegaMax(board, mDepth, -kMassiveNum, kMassiveNum, board.IsWhiteToMove ? 1 : -1);
+        return mBestMove;
+    }
+
+    int EvaluateBoardNegaMax(Board board, int depth, int alpha, int beta, int color)
     {
         List<Move> legalMoves;
-        int initialAlpha = alpha;
 
-        bool root = depthSoFar == 0;
         if (board.IsDraw())
-        {
             return 0;
-        }
 
-        ulong key = board.ZobristKey;
-        TTEntry entry = tt[key % entries];
-
-        if (!root && entry.key == key && entry.depth >= depthLeft && (
-                entry.bound == 3 // exact score
-                    || entry.bound == 2 && entry.score >= beta // lower bound, fail high
-                    || entry.bound == 1 && entry.score <= alpha // upper bound, fail low
-            ))
-        {
-
-            return entry.score;
-        }
-
-        if (depthLeft == 0 || (legalMoves = orderLegalMoves(board.GetLegalMoves(), entry.key == key ? entry.move : Move.NullMove, board)).Count == 0)
+        if (depth == 0 || (legalMoves = orderLegalMoves(board.GetLegalMoves())).Count == 0)
         {
             if (board.IsInCheckmate())
-                return -999999 + depthSoFar;
+                return -999999 + mDepth - depth;
 
             int evaluation = eval(board, board.GetAllPieceLists().Where(c => c.IsWhitePieceList == true), board.GetAllPieceLists().Where(c => c.IsWhitePieceList == false));
 
@@ -151,65 +119,24 @@ public class MyBot : IChessBot
         }
 
         // TREE SEARCH
-        int recordEval = -9999999;
-        Move bestIterMove = Move.NullMove;
+        int recordEval = int.MinValue;
         foreach (Move move in legalMoves)
         {
-            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
-            {
-                // Console.WriteLine($"Cancelling search at depth: {depthSoFar}");
-                searchCancelled = true;
-                return 0;
-            }
-
             board.MakeMove(move);
-            int evaluation = -EvaluateBoardNegaMax(board, timer, depthLeft - 1, depthSoFar + 1, -beta, -alpha, -color);
+            int evaluation = -EvaluateBoardNegaMax(board, depth - 1, -beta, -alpha, -color);
             board.UndoMove(move);
 
             if (recordEval < evaluation)
             {
                 recordEval = evaluation;
-                bestIterMove = move;
-                if (depthSoFar == 0)
-                {
+                if (depth == mDepth)
                     mBestMove = move;
-                }
             }
             alpha = Math.Max(alpha, recordEval);
             if (alpha >= beta) break;
         }
         // TREE SEARCH
 
-        // Push to TT
-        int bound = recordEval >= beta ? 2 : recordEval > initialAlpha ? 3 : 1;
-        tt[key % entries] = new TTEntry(key, bestIterMove, depthLeft, recordEval, bound);
-
         return recordEval;
-    }
-
-    public Move Think(Board board, Timer timer)
-    {
-        // Console.WriteLine($"Time for move: {timer.MillisecondsRemaining / 30}");
-        searchCancelled = false;
-        for (int depth = 1; depth <= 50; depth++)
-        {
-            // Console.WriteLine($"Evaluating at depth: {depth}");
-
-            var currentBestMove = mBestMove;
-
-            var eval = EvaluateBoardNegaMax(board, timer, depth, 0, -kMassiveNum, kMassiveNum, board.IsWhiteToMove ? 1 : -1);
-            // Console.WriteLine($"Evaluated at depth {depth}, best move so far: {mBestMove}, eval: {eval}, time spent: {timer.MillisecondsElapsedThisTurn}");
-
-            // Out of time
-            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
-            {
-                if (searchCancelled) mBestMove = currentBestMove;
-                // Console.WriteLine($"Cutting off at depth: {depth}");
-                break;
-            }
-        }
-
-        // Console.WriteLine($"Time used to find {mBestMove}: {timer.MillisecondsElapsedThisTurn}");
-        return mBestMove;
     }
 }

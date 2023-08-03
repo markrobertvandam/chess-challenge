@@ -9,7 +9,7 @@ namespace ChessChallenge.Application
     {
         public static void DrawButtons(ChallengeController controller)
         {
-            Vector2 buttonPos = UIHelper.Scale(new Vector2(260, 210));
+            Vector2 buttonPos = UIHelper.Scale(new Vector2(150, 210));
             Vector2 buttonSize = UIHelper.Scale(new Vector2(260, 55));
             float spacing = buttonSize.Y * 1.2f;
             float breakSpacing = spacing * 0.6f;
@@ -58,6 +58,7 @@ namespace ChessChallenge.Application
             if (NextButtonInRow("Fast forward", ref buttonPos, spacing, buttonSize))
             {
                 controller.fastForward = !controller.fastForward;
+                Console.WriteLine($"FF is now set to: {controller.fastForward}");
             }
 
             // Window and quit buttons
@@ -72,6 +73,33 @@ namespace ChessChallenge.Application
             if (NextButtonInRow("Exit (ESC)", ref buttonPos, spacing, buttonSize))
             {
                 Environment.Exit(0);
+            }
+
+            buttonPos = UIHelper.Scale(new Vector2(405, 210)); buttonSize = UIHelper.Scale(new Vector2(200, 55));
+
+            if (NextButtonInRow("MyBot vs MyBotv1", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv1);
+            }
+
+            if (NextButtonInRow("MyBot vs MyBotv2", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv2);
+            }
+
+            if (NextButtonInRow("MyBot vs MyBotv3", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv3);
+            }
+
+            if (NextButtonInRow("MyBot vs MyBotv4", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv4);
+            }
+
+            if (NextButtonInRow("MyBot vs MyBotv5", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBotv5);
             }
 
             bool NextButtonInRow(string name, ref Vector2 pos, float spacingY, Vector2 size)

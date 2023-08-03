@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
-{
+public class MyBotv5 : IChessBot
+{   
 
     //                     .  P    K    B    R    Q    K
     int[] pieceValues = { 0, 100, 300, 310, 500, 900, 10000 };
@@ -57,13 +57,13 @@ public class MyBot : IChessBot
             rank = 7 - rank;
         sbyte unpackedData = unchecked((sbyte)((PackedEvaluationTables[rank, file] >> 8 * ((int)type - 1)) & 0xFF));
         return isWhite ? unpackedData : -unpackedData;
-    }
+    }    
 
     public List<Move> orderLegalMoves(Move[] legalMoves, Move bestMove, Board board)
     {
         //Console.WriteLine($"Previous best move: {bestMove}");
         List<Move> sortedMoves = legalMoves
-            .Select(c => new Tuple<Move, int>(c, MVV_VLA[(int)c.CapturePieceType, (int)c.MovePieceType]))
+            .Select(c => new Tuple<Move, int> (c, MVV_VLA[(int)c.CapturePieceType, (int)c.MovePieceType]))
             .OrderByDescending(t => t.Item2)
             .Select(c => c.Item1)
             .ToList();
@@ -163,7 +163,7 @@ public class MyBot : IChessBot
             }
 
             board.MakeMove(move);
-            int evaluation = -EvaluateBoardNegaMax(board, timer, depthLeft - 1, depthSoFar + 1, -beta, -alpha, -color);
+            int evaluation = -EvaluateBoardNegaMax(board, timer, depthLeft - 1, depthSoFar + 1,-beta, -alpha, -color);
             board.UndoMove(move);
 
             if (recordEval < evaluation)
