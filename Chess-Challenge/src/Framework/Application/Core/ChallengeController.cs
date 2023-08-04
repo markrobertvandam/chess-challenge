@@ -24,6 +24,7 @@ namespace ChessChallenge.Application
             MyBotv3,
             MyBotv4,
             MyBotv5,
+            Tier1,
             EvilBot
         }
 
@@ -221,6 +222,7 @@ namespace ChessChallenge.Application
                 PlayerType.MyBotv3 => new ChessPlayer(new MyBotv3(), type, GameDurationMilliseconds),
                 PlayerType.MyBotv4 => new ChessPlayer(new MyBotv4(), type, GameDurationMilliseconds),
                 PlayerType.MyBotv5 => new ChessPlayer(new MyBotv5(), type, GameDurationMilliseconds),
+                PlayerType.Tier1 => new ChessPlayer(new Tier1(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
@@ -254,10 +256,12 @@ namespace ChessChallenge.Application
             else
             {
                 string moveName = MoveUtility.GetMoveNameUCI(chosenMove);
+                var crashPgn = PGNCreator.CreatePGN(board.AllGameMoves.ToArray());
                 string log = $"Illegal move: {moveName} in position: {FenUtility.CurrentFen(board)}";
                 Log(log, true, ConsoleColor.Red);
                 GameResult result = PlayerToMove == PlayerWhite ? GameResult.WhiteIllegalMove : GameResult.BlackIllegalMove;
                 EndGame(result);
+                throw new Exception();
             }
         }
 
