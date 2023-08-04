@@ -40,7 +40,9 @@ namespace ChessChallenge.Chess
             }
             if (result is not GameResult.NotStarted or GameResult.InProgress)
             {
-                pgn.AppendLine($"[Result \"{result}\"]");
+                    if (result == GameResult.WhiteIsMated) pgn.AppendLine($"[Result \"{whiteName}\" is mated]");
+                    else if (result == GameResult.BlackIsMated) pgn.AppendLine($"[Result \"{blackName}\" is mated]");
+                    else pgn.AppendLine($"[Result \"{result}\"]");
             }
 
             for (int plyCount = 0; plyCount < moves.Length; plyCount++)

@@ -154,7 +154,7 @@ public class MyBot : IChessBot
         Move bestIterMove = Move.NullMove;
         int InitialAlpha = alpha;
 
-        // Search moves
+        // TREE SEARCH
         for (int i = 0; i < moves.Count; i++)
         {
             if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 40) return 30000;
@@ -179,6 +179,7 @@ public class MyBot : IChessBot
 
             }
         }
+        // TREE SEARCH
 
         // (Check/Stale)mate
         if (!qsearch && moves.Count == 0) return board.IsInCheck() ? -30000 + ply : 0;

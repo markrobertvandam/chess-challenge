@@ -107,6 +107,11 @@ namespace ChessChallenge.Application
                 controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.Tier1);
             }
 
+            if (NextButtonInRow("MyBot vs JWbot", ref buttonPos, spacing, buttonSize))
+            {
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.JWbot);
+            }
+
             bool NextButtonInRow(string name, ref Vector2 pos, float spacingY, Vector2 size)
             {
                 bool pressed = UIHelper.Button(name, pos, size);
