@@ -5,7 +5,6 @@ using System.Linq;
 
 public class MyBotv5 : IChessBot
 {
-
     //                     .  P    K    B    R    Q    K
     int[] pieceValues = { 0, 100, 300, 310, 500, 900, 10000 };
 
@@ -77,15 +76,10 @@ public class MyBotv5 : IChessBot
 
     public int eval(Board board, IEnumerable<PieceList> white_pieces, IEnumerable<PieceList> black_pieces)
     {
-        var my_value = white_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();
-        var enemy_value = black_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum();
-
-        var relevantPieceTypes = new List<PieceType> { PieceType.Knight, PieceType.Rook, PieceType.Bishop, PieceType.Queen };
         int activityDiff = 0;
-
         int whiteBonus = 0;
 
-        foreach (PieceType pieceType in relevantPieceTypes)
+        foreach (PieceType pieceType in new List<PieceType> { PieceType.Knight, PieceType.Rook, PieceType.Bishop, PieceType.Queen })
         {
             var whitePieceLists = white_pieces.Where(c => c.TypeOfPieceInList == pieceType);
             var blackPieceLists = black_pieces.Where(c => c.TypeOfPieceInList == pieceType);
@@ -111,7 +105,7 @@ public class MyBotv5 : IChessBot
         }
 
 
-        return (my_value - enemy_value + activityDiff + whiteBonus) * (board.IsWhiteToMove ? 1 : -1);
+        return (white_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum() - black_pieces.Select(c => c.Count * pieceValues[(int)c.TypeOfPieceInList]).Sum() + activityDiff + whiteBonus) * (board.IsWhiteToMove ? 1 : -1);
     }
 
     public int Search(Board board, Timer timer, int alpha, int beta, int depth, int ply)
@@ -129,14 +123,10 @@ public class MyBotv5 : IChessBot
         TTEntry entry = tt[key % entries];
 
         if (!root && entry.key == key && entry.depth >= depth && (
-                entry.bound == 3 // exact score
-                    || entry.bound == 2 && entry.score >= beta // lower bound, fail high
-                    || entry.bound == 1 && entry.score <= alpha // upper bound, fail low
-            ))
-        {
-
-            return entry.score;
-        }
+            entry.bound == 3 // exact score
+            || entry.bound == 2 && entry.score >= beta // lower bound, fail high
+            || entry.bound == 1 && entry.score <= alpha // upper bound, fail low
+        )) return entry.score;
 
         int evaluation = eval(board, board.GetAllPieceLists().Where(c => c.IsWhitePieceList == true), board.GetAllPieceLists().Where(c => c.IsWhitePieceList == false));
 
@@ -144,7 +134,8 @@ public class MyBotv5 : IChessBot
         if (qsearch)
         {
             recordEval = evaluation;
-            if (recordEval >= beta) return recordEval;
+            if (recordEval >= beta)
+                return recordEval;
             alpha = Math.Max(alpha, recordEval);
         }
 
@@ -157,7 +148,8 @@ public class MyBotv5 : IChessBot
         // TREE SEARCH
         for (int i = 0; i < moves.Count; i++)
         {
-            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 40) return 30000;
+            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 40)
+                return 30000;
 
             Move move = moves[i];
             board.MakeMove(move);
@@ -175,7 +167,8 @@ public class MyBotv5 : IChessBot
                 alpha = Math.Max(alpha, eval);
 
                 // Fail-high
-                if (alpha >= beta) break;
+                if (alpha >= beta)
+                    break;
 
             }
         }
@@ -199,16 +192,17 @@ public class MyBotv5 : IChessBot
         // Console.WriteLine($"Time for move: {timer.MillisecondsRemaining / 30}");
         for (int depth = 1; depth <= 50; depth++)
         {
+            //if (depth > 6)
+            //{
+            //    Console.WriteLine($"Evaluating at depth {depth}");
+            //}
             // Console.WriteLine($"Evaluating at depth: {depth}");
 
             var eval = Search(board, timer, -30000, 30000, depth, 0);
             // Console.WriteLine($"Evaluated at depth {depth}, best move so far: {mBestMove}, eval: {eval}, time spent: {timer.MillisecondsElapsedThisTurn}");
 
             // Out of time
-            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 40)
-            {
-                break;
-            }
+            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 40) break;
         }
         // No time to select a move
         return mBestMove.IsNull ? board.GetLegalMoves()[0] : mBestMove;
